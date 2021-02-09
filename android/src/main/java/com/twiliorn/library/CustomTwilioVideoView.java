@@ -36,6 +36,7 @@ import android.widget.Toast;
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.LifecycleEventListener;
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
@@ -178,7 +179,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private AudioFocusRequest audioFocusRequest;
     private AudioAttributes playbackAttributes;
     private Handler handler = new Handler();
-
+    private ReactApplicationContext theReactContext;
     /*
      * A Room represents communication between the client and one or more participants.
      */
@@ -214,13 +215,44 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private final Map<RemoteDataTrack, RemoteParticipant> dataTrackRemoteParticipantMap =
             new HashMap<>();
 
+    private final ScreenCapturer.Listener screenCapturerListener = new ScreenCapturer.Listener() {
+        @Override
+        public void onScreenCaptureError(String errorDescription) {
+            Log.e(TAG, "Screen capturer error: " + errorDescription);
 
-    public CustomTwilioVideoView(ThemedReactContext context) {
+        }
+
+        @Override
+        public void onFirstFrameAvailable() {
+            Log.d(TAG, "First frame from screen capturer available");
+        }
+    };
+
+    private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
+        @Override
+        public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent intent) {
+            Log.i(TAG, "Activity listener" + requestCode);
+            Log.i(TAG, "Activity listener resultCode" + resultCode);
+            if (requestCode == REQUEST_MEDIA_PROJECTION) {
+                if (resultCode != AppCompatActivity.RESULT_OK) {
+                    Log.e(TAG, "Screen Share permission not granted");
+                    return;
+                }
+                screenCapturer = new ScreenCapturer(theReactContext, resultCode, intent, screenCapturerListener);
+                startScreenCapture();
+            }
+        }
+    };
+
+    public CustomTwilioVideoView(ThemedReactContext context, ReactApplicationContext reactApplicationContext) {
         super(context);
+        Log.i(TAG, "Application" + reactApplicationContext.getCurrentActivity());
+
         this.themedReactContext = context;
+        this.theReactContext = reactApplicationContext;
         this.eventEmitter = themedReactContext.getJSModule(RCTEventEmitter.class);
 
-        //themedReactContext.addActivityEventListener(this);
+        this.theReactContext.addActivityEventListener(mActivityEventListener);
         // add lifecycle for onResume and on onPause
         themedReactContext.addLifecycleEventListener(this);
 
@@ -621,12 +653,15 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
     private void requestScreenCapturePermission() {
         Log.d(TAG, "Requesting permission to capture screen");
-        MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) themedReactContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) this.theReactContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
 
-        // This initiates a prompt dialog for the user to confirm screen projection.
-        themedReactContext.getCurrentActivity().startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION, Bundle.EMPTY);
-        
+        Activity currentActivity = this.theReactContext.getCurrentActivity();
+        Log.i(TAG, "currentActivity" + currentActivity);
+        currentActivity.startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION, Bundle.EMPTY);
+    }
 
+    private void startScreenCapture() {
+        Log.i(TAG, "startScreenCapture");
     }
 
 

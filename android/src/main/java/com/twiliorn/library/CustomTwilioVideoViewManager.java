@@ -8,13 +8,22 @@
  */
 package com.twiliorn.library;
 
-import android.support.annotation.Nullable;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
+import android.os.Handler;
 
+import androidx.annotation.Nullable;
+
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
+import com.twilio.video.LocalDataTrack;
 
 import java.util.Map;
 
@@ -61,6 +70,11 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
     private static final int PUBLISH_VIDEO = 13;
     private static final int PUBLISH_AUDIO = 14;
     private static final int TOGGLE_SCREEN_SHARE = 16;
+    private ReactApplicationContext reactApplicationContext;
+
+    public CustomTwilioVideoViewManager(ReactApplicationContext context) {
+        this.reactApplicationContext = context;
+    }
 
     @Override
     public String getName() {
@@ -69,7 +83,7 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
 
     @Override
     protected CustomTwilioVideoView createViewInstance(ThemedReactContext reactContext) {
-        return new CustomTwilioVideoView(reactContext);
+        return new CustomTwilioVideoView(reactContext, reactApplicationContext);
     }
 
     @Override
