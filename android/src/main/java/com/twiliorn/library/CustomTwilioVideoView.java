@@ -687,6 +687,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             localVideoTrack.release();
             localVideoTrack = null;
             thumbnailVideoView.setVisibility(View.INVISIBLE);
+            if (Build.VERSION.SDK_INT >= 29) {
+                screenCapturerManager.endForeground();
+            }
         }
     }
 
