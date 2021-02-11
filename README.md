@@ -1,4 +1,3 @@
-![GitHub Logo](/logo.png)
 
 # Twilio Video (WebRTC) for React Native
 

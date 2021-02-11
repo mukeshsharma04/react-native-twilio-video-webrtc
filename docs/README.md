@@ -206,6 +206,25 @@ _onMuteButtonPress = () => {
 
 
 ```
+### setScreenShareEnabled
+
+```js
+setScreenShareEnabled: Function
+```
+Called when a local screen share is disable / enabled, how to use it below
+
+
+```js
+_onScreenShare = () => {
+  this.refs.twilioVideo
+    .setScreenShareEnabled(!this.state.isScreenShareEnabled)
+    .then(isEnabled => {
+      this.setState({ isEnabled });
+    });
+};
+
+
+```
 
 <br><br>
 
