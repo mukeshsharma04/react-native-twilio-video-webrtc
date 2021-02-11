@@ -203,7 +203,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private IntentFilter intentFilter;
     private BecomingNoisyReceiver myNoisyAudioStreamReceiver;
     private ScreenCapturer screenCapturer;
-
+    private ScreenCapturerManager screenCapturerManager;
     // Dedicated thread and handler for messages received from a RemoteDataTrack
     private final HandlerThread dataTrackMessageThread =
             new HandlerThread(DATA_TRACK_MESSAGE_THREAD_NAME);
@@ -219,7 +219,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         @Override
         public void onScreenCaptureError(String errorDescription) {
             Log.e(TAG, "Screen capturer error: " + errorDescription);
-
+            stopScreenCapture();
+            Toast.makeText(theReactContext, R.string.screen_capture_error,
+                    Toast.LENGTH_LONG).show();
         }
 
         @Override
@@ -235,7 +237,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             Log.i(TAG, "Activity listener resultCode" + resultCode);
             if (requestCode == REQUEST_MEDIA_PROJECTION) {
                 if (resultCode != AppCompatActivity.RESULT_OK) {
-                    Log.e(TAG, "Screen Share permission not granted");
+                    Toast.makeText(theReactContext, R.string.screen_capture_permission_not_granted,
+                            Toast.LENGTH_LONG).show();
                     return;
                 }
                 screenCapturer = new ScreenCapturer(theReactContext, resultCode, intent, screenCapturerListener);
@@ -255,7 +258,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         this.theReactContext.addActivityEventListener(mActivityEventListener);
         // add lifecycle for onResume and on onPause
         themedReactContext.addLifecycleEventListener(this);
-
+        screenCapturerManager = new ScreenCapturerManager(theReactContext);
         /*
          * Enable changing the volume using the up/down keys during a conversation
          */
@@ -581,6 +584,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             cameraCapturer.stopCapture();
             cameraCapturer = null;
         }
+        if (Build.VERSION.SDK_INT >= 29) {
+            screenCapturerManager.unbindService();
+        }
     }
 
     // ===== SEND STRING ON DATA TRACK ======================================================================
@@ -643,27 +649,46 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     public void toggleScreenShare(boolean enabled) {
-        Log.i("toggleScreenShare", "SCREEN SHARE CALL");
         WritableMap event = new WritableNativeMap();
-        event.putBoolean("screenShareEnabled", enabled);
         pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_CHANGED, event);
+        if(enabled) {
+            if (Build.VERSION.SDK_INT >= 29) {
+                screenCapturerManager.startForeground();
+            }
+            if (screenCapturer == null) {
+                requestScreenCapturePermission();
+            } else {
+                startScreenCapture();
+            }
+        }else {
+            if (Build.VERSION.SDK_INT >= 29) {
+                screenCapturerManager.endForeground();
+            }
+            stopScreenCapture();
+        }
 
-        requestScreenCapturePermission();
 
     }
     private void requestScreenCapturePermission() {
-        Log.d(TAG, "Requesting permission to capture screen");
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) this.theReactContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-
         Activity currentActivity = this.theReactContext.getCurrentActivity();
-        Log.i(TAG, "currentActivity" + currentActivity);
         currentActivity.startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION, Bundle.EMPTY);
     }
 
     private void startScreenCapture() {
-        Log.i(TAG, "startScreenCapture");
+        localVideoTrack = LocalVideoTrack.create(theReactContext, true, screenCapturer);
+        thumbnailVideoView.setVisibility(View.VISIBLE);
+        localVideoTrack.addRenderer(thumbnailVideoView);
     }
 
+    private void stopScreenCapture() {
+        if (localVideoTrack != null) {
+            localVideoTrack.removeRenderer(thumbnailVideoView);
+            localVideoTrack.release();
+            localVideoTrack = null;
+            thumbnailVideoView.setVisibility(View.INVISIBLE);
+        }
+    }
 
     public void toggleBluetoothHeadset(boolean enabled) {
         AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);

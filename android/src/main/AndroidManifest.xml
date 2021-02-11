@@ -16,7 +16,6 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <application>
-        <activity android:name="com.twiliorn.library.ScreenCapturerActivity" />
         <service
             android:enabled="true"
             android:name="com.twiliorn.library.ScreenCapturerService"

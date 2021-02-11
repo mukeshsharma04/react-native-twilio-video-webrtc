@@ -9,7 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 
 @TargetApi(29)
 public class ScreenCapturerService extends Service {
@@ -52,7 +52,7 @@ public class ScreenCapturerService extends Service {
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID);
         Notification notification = notificationBuilder.setOngoing(true)
                 .setSmallIcon(R.drawable.ic_screen_share_white_24dp)
-                .setContentTitle("ScreenCapturerService is running in the foreground")
+                .setContentTitle("Your screen share is running in the foreground")
                 .setPriority(NotificationManager.IMPORTANCE_MIN)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
