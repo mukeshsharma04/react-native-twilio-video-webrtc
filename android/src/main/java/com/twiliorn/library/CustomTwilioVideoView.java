@@ -31,6 +31,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.facebook.react.bridge.ActivityEventListener;
@@ -356,6 +357,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             /*
              * If the local video track was released when the app was put in the background, recreate.
              */
+            CustomTwilioVideoView.this.setKeepScreenOn(true);
             if (cameraCapturer != null && localVideoTrack == null) {
                 localVideoTrack = LocalVideoTrack.create(getContext(), isVideoEnabled, cameraCapturer, buildVideoConstraints());
             }
@@ -396,6 +398,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
 
             localVideoTrack.release();
             localVideoTrack = null;
+            CustomTwilioVideoView.this.setKeepScreenOn(false);
         }
     }
 
